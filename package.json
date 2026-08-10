@@ -8,9 +8,6 @@
     "build:pre": "rush build --mode pre",
     "build:prod": "rush build --mode prod",
     "build:test": "rush build --mode test",
-    "commit": "rush update && rush commit && git push",
-    "lfx": "lockfile-explorer",
-    "prettier-fix": "prettier .  --write",
     "update": "rush update",
     "update-full": "rush update --full"
   },

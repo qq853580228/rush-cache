@@ -1,0 +1,9 @@
+{
+  "name": "rush-build-cache-server",
+  "version": "1.0.0",
+  "description": "Rush build cache HTTP server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}

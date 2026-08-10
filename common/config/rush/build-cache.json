@@ -15,8 +15,9 @@
   /**
    * (Required) Choose where project build outputs will be cached.
    *
-   * Possible values: "local-only", "azure-blob-storage", "amazon-s3"
+   * Possible values: "local-only", "azure-blob-storage", "amazon-s3", "http"
    */
+  // "cacheProvider": "local-only",
   "cacheProvider": "local-only",
 
   /**
@@ -108,7 +109,7 @@
      * (Required) The URL of the server that stores the caches.
      * Example: "https://build-cacches.example.com/"
      */
-    // "url": "https://build-cacches.example.com/",
+    "url": "http://localhost:3000/",
 
     /**
      * (Optional) The HTTP method to use when writing to the cache (defaults to PUT).
@@ -140,6 +141,6 @@
     /**
      * (Optional) If set to true, allow writing to the cache. Defaults to false.
      */
-    // "isCacheWriteAllowed": true
+    "isCacheWriteAllowed": true
   }
 }
