@@ -1,0 +1,21 @@
+{
+  "name": "rush-cache",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "rush build",
+    "build:dev": "rush build --mode dev",
+    "build:pre": "rush build --mode pre",
+    "build:prod": "rush build --mode prod",
+    "build:test": "rush build --mode test",
+    "commit": "rush update && rush commit && git push",
+    "lfx": "lockfile-explorer",
+    "prettier-fix": "prettier .  --write",
+    "update": "rush update",
+    "update-full": "rush update --full"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
