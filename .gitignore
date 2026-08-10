@@ -75,3 +75,8 @@ common/autoinstallers/*/.npmrc
 .heft
 
 *.jsonl
+
+**/docs/
+
+**/dist/
+**/rush-build-cache/
