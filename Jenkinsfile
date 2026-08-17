@@ -1,72 +1,65 @@
 pipeline {
     agent {
         docker {
-            image 'node:18-alpine'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
+            image 'node:20-alpine' // node版本和项目对齐
+            reuseNode true
         }
     }
-
     environment {
-        PROJECT_NAME = 'your-app-name'
-        IMAGE_NAME = 'your-dockerhub-id/rush-cache'
-        IMAGE_TAG = "${env.GIT_COMMIT}"
-        CONTAINER_NAME = 'rush-cache-app'
-        HOST_PORT = '8081'
-        CONTAINER_PORT = '8080'
+        // github凭证id，对应jenkins配置的凭证ID
+        GIT_CREDS = credentials('github-token')
     }
-
     stages {
-        stage('Checkout') {
+        stage('Checkout 拉取代码') {
             steps {
                 checkout scm
+                sh '''
+                    node -v
+                    npm -v
+                '''
             }
         }
 
-        stage('Setup Rush & Install Dependencies') {
+        stage('安装rush全局工具') {
             steps {
-                sh "node common/scripts/install-run-rush.js install"
+                // 全局安装rush
+                sh 'npm install -g @microsoft/rush'
+                sh 'rush --version'
             }
         }
 
-        stage('Build Project') {
+        stage('Rush 安装依赖') {
             steps {
-                sh "node common/scripts/install-run-rush.js build --to ${PROJECT_NAME}"
+                // rush install 解析、安装monorepo全部包依赖
+                sh 'rush install'
             }
         }
 
-        stage('Deploy with rush deploy') {
+        stage('Rush Build 构建全部包') {
             steps {
-                sh "node common/scripts/install-run-rush.js deploy --project ${PROJECT_NAME}"
+                // 构建monorepo所有项目
+                sh 'rush build'
+                // 如果只构建指定包 rush build --to @your/package-name
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f Dockerfile.deploy ."
-                sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
+        stage('部署（根据你的项目自定义）') {
+            when {
+                branch 'main' // main分支才执行部署
             }
-        }
-
-        stage('Run Container') {
             steps {
-                sh "docker stop ${CONTAINER_NAME} || true"
-                sh "docker rm ${CONTAINER_NAME} || true"
-                sh """
-                    docker run -d \
-                    --name ${CONTAINER_NAME} \
-                    -p ${HOST_PORT}:${CONTAINER_PORT} \
-                    ${IMAGE_NAME}:${IMAGE_TAG}
-                """
+                echo '构建产物在各包下的dist目录'
+                // 示例：如果是前端静态包，拷贝dist，或者docker打包镜像、上传服务器
+                // sh 'rush deploy' // rush自带deploy可以导出静态产物
             }
         }
     }
-
     post {
-        failure {
-            echo 'Pipeline failed!'
-        }
         success {
-            echo 'Pipeline succeeded! Application is deployed.'
+            echo "流水线构建成功"
+        }
+        failure {
+            echo "流水线失败"
         }
     }
 }
