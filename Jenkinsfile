@@ -22,9 +22,12 @@ pipeline {
         stage('Setup Rush & Install Dependencies') {
             steps {
                 script {
-                    // 1. 使用 install-run-rush.js 安装依赖
-                    //    这会自动安装 rush.json 中指定的 Rush 版本，然后执行 rush install
-                    sh "node common/scripts/install-run-rush.js install"
+                    // 获取 Node.js 工具
+                    def nodeHome = tool name: 'Node-18', type: 'nodejs'
+                    // 将 node 加入 PATH
+                    withEnv(["PATH+EXTRA=${nodeHome}/bin"]) {
+                        sh "node common/scripts/install-run-rush.js install"
+                    }
                 }
             }
         }
