@@ -8,4 +8,5 @@ console.log('isNumber', isNumber('123'));
 
 <template>
   <HelloWorld msg="my-app" />
+  <p>当前环境：{{ import.meta.env.VITE_ENV }}</p>
 </template>
