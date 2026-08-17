@@ -1,31 +1,53 @@
 pipeline {
     agent any
 
-    parameters {
-        choice(
-            name: 'DEPLOY_ENV',
-            choices: ['dev', 'staging', 'production'],
-            description: '请选择要部署的环境'
-        )
-    }
-
     environment {
-        // ========== 关键：添加下面这一行 ==========
-        DOCKER_HOST = 'tcp://host.docker.internal:2375'
-        // ==========================================
-        IMAGE_NAME = 'rush-cache-app'
+        // 定义部署的项目名称，请根据你的 rush.json 修改
+        PROJECT_NAME = 'rush-cache'
+        // 定义 Docker 镜像名称
+        IMAGE_NAME = 'your-dockerhub-id/rush-cache'
+        IMAGE_TAG = "${env.GIT_COMMIT}"
+        CONTAINER_NAME = 'rush-cache-app'
+        HOST_PORT = '8081'
+        CONTAINER_PORT = '8080'
     }
 
     stages {
-        // ... 其他 stages 保持不变 ...
-        
-        stage('Build Frontend') {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Setup Rush & Install Dependencies') {
             steps {
                 script {
-                    docker.image('node:18-alpine').inside {
-                        sh 'npm install'
-                        sh 'npm run build'
-                    }
+                    // 1. 使用 install-run-rush.js 安装依赖
+                    //    这会自动安装 rush.json 中指定的 Rush 版本，然后执行 rush install
+                    sh "node common/scripts/install-run-rush.js install"
+                }
+            }
+        }
+
+        stage('Build Project') {
+            steps {
+                script {
+                    // 2. 使用 install-run-rush.js 执行构建
+                    //    如果只需要构建特定项目及其依赖，使用 --to 参数
+                    sh "node common/scripts/install-run-rush.js build --to ${PROJECT_NAME}"
+                    
+                    // 3. (可选) 如果项目有专门的 "ship" 构建配置，可以这样用
+                    // sh "node common/scripts/install-run-rush.js rebuild --ship --verbose"
+                }
+            }
+        }
+
+        stage('Deploy with rush deploy') {
+            steps {
+                script {
+                    // 4. 使用 rush deploy 将特定项目及其生产依赖提取到 common/deploy 文件夹
+                    //    首先需要运行 rush init-deploy --project <你的项目名> 来生成配置文件
+                    sh "node common/scripts/install-run-rush.js deploy --project ${PROJECT_NAME}"
                 }
             }
         }
@@ -33,26 +55,35 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def appImage = docker.build("${IMAGE_NAME}:${env.BUILD_ID}")
+                    // 5. 构建 Docker 镜像：将 common/deploy 文件夹作为构建上下文
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f Dockerfile.deploy ."
+                    sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Run Container') {
             steps {
                 script {
-                    // 这里可以加上端口判断逻辑（参考之前的配置）
-                    def port = (params.DEPLOY_ENV == 'production') ? '8890' : (params.DEPLOY_ENV == 'staging' ? '8889' : '8888')
+                    sh "docker stop ${CONTAINER_NAME} || true"
+                    sh "docker rm ${CONTAINER_NAME} || true"
                     sh """
-                        docker rm -f ${IMAGE_NAME} || true
                         docker run -d \
-                            --name ${IMAGE_NAME} \
-                            -p ${port}:80 \
-                            ${IMAGE_NAME}:${env.BUILD_ID}
+                        --name ${CONTAINER_NAME} \
+                        -p ${HOST_PORT}:${CONTAINER_PORT} \
+                        ${IMAGE_NAME}:${IMAGE_TAG}
                     """
-                    echo "部署环境: ${params.DEPLOY_ENV}, 端口: ${port}"
                 }
             }
+        }
+    }
+
+    post {
+        failure {
+            echo 'Pipeline failed!'
+        }
+        success {
+            echo 'Pipeline succeeded! Application is deployed.'
         }
     }
 }
