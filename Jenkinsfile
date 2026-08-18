@@ -7,7 +7,7 @@ pipeline {
     }
     environment {
         CI = 'true'
-        // 分支映射mode，和my‑app下.env.*后缀严格对齐
+        // 根据分支得到环境标识 dev / test / pre / prod
         MODE = """${sh(
             script: '''
                 case "${BRANCH_NAME}" in
@@ -23,17 +23,17 @@ pipeline {
     }
 
     stages {
-        stage('Setup') {
+        stage('环境打印') {
             steps {
                 sh '''
                     apk add --no-cache git
-                    echo "BRANCH_NAME=${BRANCH_NAME}"
-                    echo "MODE=${MODE}"
+                    echo "分支：${BRANCH_NAME}"
+                    echo "部署环境MODE：${MODE}"
                 '''
             }
         }
 
-        stage('Install') {
+        stage('Install依赖') {
             steps {
                 sh '''
                     corepack enable
@@ -42,46 +42,34 @@ pipeline {
             }
         }
 
-        stage('Build my‑app') {
-            when {
-                expression { env.MODE != 'unknown' }
-            }
+        stage('Build编译打包') {
+            when { expression { env.MODE != 'unknown' } }
             steps {
                 sh '''
                     export MODE="${MODE}"
-                    # build‑to 只构建my‑app以及它依赖的components
                     node common/scripts/install-run-rush.js build --to my-app --verbose
                 '''
             }
         }
 
-        stage('Deploy') {
-            when {
-                expression { env.MODE != 'unknown' }
-            }
+        stage('发布：拷贝产物到宿主机磁盘【模拟上传服务器】') {
+            when { expression { env.MODE != 'unknown' } }
             steps {
                 sh '''
-                    echo "产物目录 my‑app/dist"
-                    case "${MODE}" in
-                        dev)
-                            echo "部署开发环境"
-                            ;;
-                        test)
-                            echo "部署测试环境"
-                            ;;
-                        pre)
-                            echo "部署预发环境"
-                            ;;
-                        prod)
-                            echo "部署生产环境"
-                            ;;
-                    esac
+                    # /var/jenkins_home 容器内映射 Windows D:\jenkins_home
+                    mkdir -p /var/jenkins_home/build_output/${MODE}
+                    # 把容器内构建出来的dist全部复制到jenkins挂载目录，落到Windows磁盘
+                    cp -r my-app/dist/*  /var/jenkins_home/build_output/${MODE}/
+                    echo "======================================"
+                    echo "✅打包产物已经输出到Windows宿主机："
+                    echo "D:\\jenkins_home\\build_output\\${MODE}"
+                    echo "======================================"
                 '''
             }
         }
     }
     post {
-        success { echo "✅构建完成，mode=${MODE}" }
-        failure { echo "❌流水线失败，mode=${MODE}" }
+        success { echo "✅流水线全部完成，可访问本地nginx查看页面" }
+        failure { echo "❌流水线执行失败" }
     }
 }
