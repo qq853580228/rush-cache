@@ -8,6 +8,6 @@ const appEnv = import.meta.env.VITE_ENV
 </script>
 
 <template>
-  <HelloWorld msg="my-app" />
+  <HelloWorld msg="HelloWorld" />
   <p>当前环境：{{ appEnv }}</p>
 </template>
