@@ -50,7 +50,7 @@ pipeline {
                 sh '''
                     export MODE="${MODE}"
                     # build‑to 只构建my‑app以及它依赖的components
-                    node common/scripts/install-run-rush.js build-to my-app --verbose
+                    node common/scripts/install-run-rush.js build --to my-app --verbose
                 '''
             }
         }
