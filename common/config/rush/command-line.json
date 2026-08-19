@@ -182,6 +182,34 @@
    * For example, you might define a "--production" parameter for the "rush build" command.
    */
   "parameters": [
+    {
+      /**
+       * (必须) 决定自定义参数的类型
+       * "choice" 类型的参数需要从可供选择的参数中选取一个
+       */
+      "parameterKind": "choice",
+      "longName": "--mode",
+      "description": "选择构建的生产模式，有四个选项分别是：dev、test、pre和prod",
+      "associatedCommands": ["build", "rebuild"],
+      "alternatives": [
+        {
+          "name": "dev",
+          "description": "开发服"
+        },
+        {
+          "name": "test",
+          "description": "测试服"
+        },
+        {
+          "name": "pre",
+          "description": "预览服"
+        },
+        {
+          "name": "prod",
+          "description": "正式服"
+        }
+      ]
+    }
     // {
     //   /**
     //    * (Required) Determines the type of custom parameter.
