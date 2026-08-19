@@ -2,6 +2,8 @@
 
 基于 Rush 的 Monorepo 示例项目，演示多包管理、workspace 依赖引用以及构建缓存（Build Cache）的完整实践，**同时支持 `local-only` 本地磁盘缓存和 `http` 远程缓存两种模式**。
 
+> 在线预览：http://111.229.185.119:8085/
+
 ## 项目简介
 
 本项目使用 [Rush](https://rushjs.io/) 管理 Monorepo，包含 3 个子包，通过 `workspace:*` 协议实现本地包互相引用：
